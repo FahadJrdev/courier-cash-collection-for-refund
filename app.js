@@ -22,6 +22,16 @@
     });
   }
 
+  /* "2026-09-11" -> "11 September", so the window is written from the data and never retyped. */
+  function windowLabel(date, short) {
+    var m = String(date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) { return String(date || ''); }
+    var full = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+    var abbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return Number(m[3]) + ' ' + (short ? abbr : full)[Number(m[2]) - 1];
+  }
+
   function sortedCouriers() {
     return Object.keys(D.couriers)
       .map(function (k) { return D.couriers[k]; })
@@ -52,7 +62,7 @@
       '<div class="stack">' +
         '<div class="stack-sm">' +
           '<h1>LakLak paid these refunds — then our report stopped asking the couriers for the cash.</h1>' +
-          '<p class="lede">Between 1 August and 10 September, ' + D.refunded_count + ' delivered cash orders were refunded to the customer out of LakLak\'s own money' +
+          '<p class="lede">Between ' + windowLabel(D.window[0]) + ' and ' + windowLabel(D.window[1]) + ', ' + D.refunded_count + ' delivered cash orders were refunded to the customer out of LakLak\'s own money' +
           (D.cancelled_count ? ', and ' + D.cancelled_count + ' more was cancelled after delivery' : '') + '. ' +
           'The courier had already taken that cash at the door — but the cash desk stopped asking him for it, because our report only counted orders still marked <em>delivered</em>.</p>' +
         '</div>' +
@@ -61,12 +71,12 @@
           '<div class="figure is-owed"><span class="v">' + money(D.total_still_with) + '</span><span class="k">TJS still with couriers</span></div>' +
           '<div class="figure is-good"><span class="v">' + money(D.total_in_till) + '</span><span class="k">TJS the cashier collected anyway — in our till, unrecorded</span></div>' +
           '<div class="figure"><span class="v">' + money(D.total_never_asked) + '</span><span class="k">TJS erased from the report in total</span></div>' +
-          '<div class="figure"><span class="v">' + D.courier_count + '</span><span class="k">couriers, ' + D.total_orders + ' orders, 41 days</span></div>' +
+          '<div class="figure"><span class="v">' + D.courier_count + '</span><span class="k">couriers, ' + D.total_orders + ' orders, ' + D.window_days + ' days</span></div>' +
         '</div>' +
 
         '<div class="note is-good">' +
           '<h3>The cash desk was already fighting this by hand</h3>' +
-          '<p>Of ' + D.notes_receipts + ' receipts, <strong>' + D.notes_total + '</strong> carry a handwritten note. In six of them the cashier had spotted that the report showed less than the courier app, ' +
+          '<p>Of ' + D.notes_receipts + ' receipts, <strong>' + D.notes_total + '</strong> carry a handwritten note. In ' + D.record_fix_receipts + ' of them the cashier had spotted that the report showed less than the courier app, ' +
           'took the <strong>higher</strong> amount, and wrote the real figure in the note — because the form would not let him type it. ' +
           'That is why <strong>' + money(D.total_in_till) + ' TJS is in our till and not in a pocket.</strong></p>' +
           '<p>Not one note mentions a refund. They knew the two screens disagreed; they did not know why. That is why they caught the big gaps and missed the small ones.</p>' +
@@ -94,10 +104,10 @@
         '</div>' +
 
         '<div class="note is-warn">' +
-          '<h3>Before you collect from anyone: three of these figures are still wrong in our own system</h3>' +
-          '<p>The cashier could not type the amounts he actually took, so <strong>our records understate what these three paid us.</strong> ' +
+          '<h3>Before you collect from anyone: ' + D.record_fix_couriers.length + ' of these figures are still wrong in our own system</h3>' +
+          '<p>The cashier could not type the amounts he actually took, so <strong>our records understate what these ' + D.record_fix_couriers.length + ' paid us.</strong> ' +
           'Once the fix is deployed the courier report will ask them for money they have already handed over — a total of <strong>' +
-          money(D.total_record_fix) + ' TJS</strong> — until six receipts are corrected.</p>' +
+          money(D.total_record_fix) + ' TJS</strong> — until ' + D.record_fix_receipts + ' receipts are corrected.</p>' +
           '<div class="scroll"><table><thead><tr>' +
             '<th>Courier</th><th class="r">Report will show</th><th class="r">Should be</th><th class="r">Do not collect</th><th>Receipts to correct</th>' +
           '</tr></thead><tbody>' +
@@ -109,12 +119,45 @@
               '<td class="num">' + r.receipts.join(', ') + '</td></tr>';
           }).join('') +
           '</tbody></table></div>' +
-          '<p>The other six couriers in the list above are unaffected — their receipts match the cash, so their figures are correct the moment the fix goes live.</p>' +
+          '<p>The other ' + (D.courier_count - D.record_fix_couriers.length) + ' couriers in the list above are unaffected — their receipts match the cash, so their figures are correct the moment the fix goes live.</p>' +
         '</div>' +
+
+        (D.live_incidents && D.live_incidents.length ?
+        '<div class="note is-warn">' +
+          '<h3>On 10 September it happened twice at the desk, while we watched</h3>' +
+          '<p>The cash desk reported both the same day. Each traces to a single order whose cash had already been handed in before the sale was undone.</p>' +
+          '<div class="scroll"><table><thead><tr>' +
+            '<th>Courier</th><th>Receipt</th><th class="r">Desk asked</th><th class="r">He was holding</th><th class="r">Left behind</th><th>The order behind it</th>' +
+          '</tr></thead><tbody>' +
+          D.live_incidents.map(function (i) {
+            return '<tr class="flag"><td>' + esc(i.courier) + '</td>' +
+              '<td class="num">' + esc(i.receipt) + '</td>' +
+              '<td class="r">' + money(i.asked) + '</td>' +
+              '<td class="r">' + money(i.holding) + '</td>' +
+              '<td class="r gap">' + money(i.short_by) + '</td>' +
+              '<td class="num">' + esc(i.order_code) + ' · ' + money(i.order_amount) + ' · ' +
+              esc(i.reversed_to) + ' ' + day(i.reversed_at) + ', after ' + esc(i.settled_receipt) + '</td></tr>';
+          }).join('') +
+          '</tbody></table></div>' +
+          '<p><strong>' + esc(D.live_incidents[0].courier) + '</strong> was asked for ' + money(D.live_incidents[0].asked) +
+          ' when he was holding ' + money(D.live_incidents[0].holding) + ', so ' + money(D.live_incidents[0].short_by) +
+          ' stayed in his pocket. His phantom order was <em>cancelled</em> and never carried a delivery row at all, ' +
+          'so the code fix cannot recover it from the history — that one needs a correction written by hand.</p>' +
+          '<p><strong>' + esc(D.live_incidents[1].courier) + '</strong> is worse in kind, if smaller. His balance read ' +
+          money(D.live_incidents[1].asked) + ' — money we appeared to owe <em>him</em> — so the desk form flipped itself ' +
+          'into payout mode and recorded the ' + money(D.live_incidents[1].holding) + ' he handed over as a payment <em>to</em> him. ' +
+          'The balance moved the wrong way and the receipt never reached Collected Histories. ' +
+          'Without the phantom credit his balance that morning was ' + money(D.live_incidents[1].holding) +
+          ' and the receipt would have closed him to zero.</p>' +
+        '</div>' : '') +
 
         '<div class="note good">' +
           '<h3>This is already fixed in the code</h3>' +
           '<p>The report no longer asks "is this order still marked delivered?". It now asks "did the courier deliver it and take the cash?" — read from the order\'s own delivery history, which a refund cannot erase. A refund is now what it always was: <strong>our cost, not a discount on what the courier owes.</strong></p>' +
+          '<p>Three records still need correcting by hand, because code cannot read what was never written down. ' +
+          'P-001 has to become the acceptance it always was; R-242 and R-249 have to carry the amounts the cashier settled — ' +
+          '964.25 and 133.50 — instead of the smaller figures the form allowed. ' +
+          'The 115.00 order behind R-242 never got a delivery row at all, so the history has nothing for the fix to find.</p>' +
         '</div>' +
       '</div>';
 
@@ -362,11 +405,20 @@
 
   /* ---------------- router ---------------- */
 
+  function setWindowLabel() {
+    var el = document.getElementById('window-label');
+    if (el && D.window) {
+      el.textContent = windowLabel(D.window[0], true) + ' – ' + windowLabel(D.window[1], true) +
+        ' ' + String(D.window[1]).slice(0, 4);
+    }
+  }
+
   function route() {
     var m = location.hash.match(/^#\/courier\/(\d+)$/);
     if (m) { renderCourier(m[1]); } else { renderHome(); }
   }
 
   window.addEventListener('hashchange', route);
+  setWindowLabel();
   route();
 })();
