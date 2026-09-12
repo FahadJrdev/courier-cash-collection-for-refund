@@ -293,3 +293,5 @@ td.note-cell .tag { margin-left: .4rem; vertical-align: middle; }
 .note.collect .collect-amt { font-weight: 700; color: #1b5e20; font-size: 15px; }
 .note.collect tr.settled td { color: #9aa1ad; }
 .note.collect tr.settled .collect-amt { color: #9aa1ad; font-weight: 600; }
+.note.collect .bridge { font-size: 13px; line-height: 1.6; margin-top: 14px; color: #24402b; }
+.note.collect .bridge + .bridge { margin-top: 8px; }

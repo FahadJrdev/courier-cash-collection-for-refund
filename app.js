@@ -105,6 +105,18 @@
             '<td class="r gap">' + money(D.total_in_till) + '</td>' +
             '<td class="r collect-amt">' + money(D.total_to_collect) + '</td>' +
           '</tr></tfoot></table></div>' +
+          '<p class="bridge"><strong>How this fits with the figures at the top.</strong> Those describe the money the ' +
+          'refunds erased. This table is everything the couriers owe today, which is more than that. Of the ' +
+          '<strong>' + money(D.total_to_collect) + '</strong> to collect, <strong>' + money(D.total_still_with) + '</strong> ' +
+          'is the erased refund cash still out there, and <strong>' + money(D.total_ordinary_balance) + '</strong> is ' +
+          'ordinary balance — cash taken in the last day or two and not yet handed in, which this bug never touched. ' +
+          'The ' + money(D.total_in_till) + ' appears in both places because it is the same money: it lowers the refund ' +
+          'residue and it lowers what is left to collect. It is not counted twice.</p>' +
+          (D.to_collect.filter(function (c) { return c.should_show + 0.005 < c.still_with; }).map(function (c) {
+            return '<p class="bridge">' + esc(c.name) + ' is the one row where the two do not line up: ' +
+              money(c.should_show) + ' to collect against ' + money(c.still_with) + ' of refund cash. ' +
+              'The difference was already recovered by correcting his receipt by hand, so it is settled and must not be asked for again.</p>';
+          }).join('')) +
         '</div>' : '') +
 
         '<div class="explain">' +
