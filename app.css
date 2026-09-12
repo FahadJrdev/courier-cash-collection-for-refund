@@ -284,3 +284,12 @@ td.note-cell .tag { margin-left: .4rem; vertical-align: middle; }
   .topbar, .back { display: none; }
   .chain, .list, .scroll, .figure, .explain { break-inside: avoid; }
 }
+
+/* the collect card: the figure a cashier reads off to collect */
+.note.collect { border-left-color: #1b5e20; background: #f1f8f2; }
+.note.collect h3 { color: #1b5e20; }
+.note.collect table { font-variant-numeric: tabular-nums; }
+.note.collect tfoot td { border-top: 2px solid #c8e0cc; font-weight: 700; }
+.note.collect .collect-amt { font-weight: 700; color: #1b5e20; font-size: 15px; }
+.note.collect tr.settled td { color: #9aa1ad; }
+.note.collect tr.settled .collect-amt { color: #9aa1ad; font-weight: 600; }

@@ -82,6 +82,31 @@
           '<p>Not one note mentions a refund. They knew the two screens disagreed; they did not know why. That is why they caught the big gaps and missed the small ones.</p>' +
         '</div>' +
 
+        (D.to_collect && D.to_collect.length ?
+        '<div class="note collect">' +
+          '<h3>What to ask each courier for, now the fix is live</h3>' +
+          '<p>The left column is what the courier report puts on screen. The middle one is money already in our till ' +
+          'against a receipt that recorded less than the cashier took — it is <strong>not</strong> collectable twice. ' +
+          'The right-hand column is the figure to collect.</p>' +
+          '<p class="hint">These are the ' + D.courier_count + ' couriers this bug touched. Other couriers carry ordinary ' +
+          'balances of their own that were never affected, so they are not listed here.</p>' +
+          '<div class="scroll"><table><thead><tr>' +
+            '<th>Courier</th><th class="r">Report shows</th><th class="r">Already in our till</th><th class="r">Ask him for</th>' +
+          '</tr></thead><tbody>' +
+          D.to_collect.map(function (c) {
+            return '<tr' + (c.should_show < 0.005 ? ' class="settled"' : '') + '><td>' + esc(c.name) + '</td>' +
+              '<td class="r">' + money(c.will_show) + '</td>' +
+              '<td class="r' + (c.in_till > 0.005 ? ' gap' : '') + '">' + (c.in_till > 0.005 ? money(c.in_till) : '—') + '</td>' +
+              '<td class="r collect-amt">' + money(c.should_show) + '</td></tr>';
+          }).join('') +
+          '</tbody><tfoot><tr>' +
+            '<td>Total</td>' +
+            '<td class="r">' + money(D.total_will_show) + '</td>' +
+            '<td class="r gap">' + money(D.total_in_till) + '</td>' +
+            '<td class="r collect-amt">' + money(D.total_to_collect) + '</td>' +
+          '</tr></tfoot></table></div>' +
+        '</div>' : '') +
+
         '<div class="explain">' +
           '<h2>What happened, in five plain steps</h2>' +
           '<div class="flow">' +
@@ -154,10 +179,15 @@
         '<div class="note good">' +
           '<h3>This is already fixed in the code</h3>' +
           '<p>The report no longer asks "is this order still marked delivered?". It now asks "did the courier deliver it and take the cash?" — read from the order\'s own delivery history, which a refund cannot erase. A refund is now what it always was: <strong>our cost, not a discount on what the courier owes.</strong></p>' +
+          (D.corrections_applied ?
+          '<p>Three records could not be fixed by code, because code cannot read what was never written down, so they were corrected by hand and are already in the database: ' +
+          'P-001 is now the acceptance it always was, and R-242 and R-249 carry the amounts the cashier actually settled — 964.25 and 133.50 — ' +
+          'instead of the smaller figures the form allowed. The 115.00 order behind R-242 never got a delivery row at all, so the history had nothing for the fix to find.</p>'
+          :
           '<p>Three records still need correcting by hand, because code cannot read what was never written down. ' +
           'P-001 has to become the acceptance it always was; R-242 and R-249 have to carry the amounts the cashier settled — ' +
           '964.25 and 133.50 — instead of the smaller figures the form allowed. ' +
-          'The 115.00 order behind R-242 never got a delivery row at all, so the history has nothing for the fix to find.</p>' +
+          'The 115.00 order behind R-242 never got a delivery row at all, so the history has nothing for the fix to find.</p>') +
         '</div>' +
       '</div>';
 
